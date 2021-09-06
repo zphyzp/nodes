@@ -1,0 +1,11 @@
+run{
+allocate CHANNEL ch1 type DISK; 
+allocate CHANNEL ch2 type DISK; 
+backup as compressed backupset database format '/backup/rman_backup/rman_full_%d_%T_%s'; 
+sql 'alter system archive log current';
+backup archivelog all format '/backup/rman_backup/rman_arch_%d_%T_%s' delete input;
+backup current controlfile format '/backup/rman_backup/rman_ctrl_%d_%T_%s';
+delete noprompt obsolete;
+RELEASE CHANNEL ch1;                                                       
+RELEASE CHANNEL ch2;                                                       
+}
