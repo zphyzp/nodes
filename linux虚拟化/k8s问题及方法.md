@@ -99,3 +99,24 @@ kubectl delete node node-name
 # 加入新节点，在master节点上执行，将输出再到新节点上执行
 kubeadm token create --print-join-command
 ```
+
+# k8s集群移除master再重新加入
+
+```shell
+#剔除节点
+kubectl drain master2 --delete-local-data --force --ignore-daemonsets
+
+#删除节点
+kubectl delete node master2
+
+#被踢出的节点上执行
+kubeadm reset
+
+#主节点重新生成证书和token
+kubeadm init phase upload-certs --upload-certs
+kubeadm token create --print-join-command
+
+#重新加入
+kubeadm join apiserver-lb:6443 --token o0d4f9.p7hrqt9nx3pyyfg4     --discovery-token-ca-cert-hash sha256:1f084d1ac878308635f1dbe8676bac33fe3df6d52fa212834787a0bc71f1db6d --control-plane --certificate-key 322175270bfde7b12f18c933ead856c7c7a9a666d596e8d48e7650c1cab20a56
+```
+
