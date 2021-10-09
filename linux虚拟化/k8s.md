@@ -3012,7 +3012,10 @@ spec:
       resources:
         requests:
           storage: 1Gi
+          
 ```
+
+### 删除pvc、pv
 
 ```shell
 #删除pvc顺序

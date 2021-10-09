@@ -1392,3 +1392,105 @@ order by data_length desc;
 
 
 
+# mysql8.0 undo管理
+
+```bash
+undo log 数默认为2
+mysql> show variables like '%innodb_undo_tablespaces%';
++-------------------------+-------+
+| Variable_name           | Value |
++-------------------------+-------+
+| innodb_undo_tablespaces | 2     |
++-------------------------+-------+
+1 row in set (0.02 sec)
+image.png
+
+
+查看存在的undo log
+
+SELECT * FROM  INFORMATION_SCHEMA.INNODB_TABLESPACES WHERE ROW_FORMAT = 'undo';
+
+*************************** 1. row ***************************
+         SPACE: 4294967279
+          NAME: innodb_undo_001
+          FLAG: 0
+    ROW_FORMAT: Undo
+     PAGE_SIZE: 16384
+ ZIP_PAGE_SIZE: 0
+    SPACE_TYPE: Undo
+ FS_BLOCK_SIZE: 0
+     FILE_SIZE: 0
+ALLOCATED_SIZE: 0
+SERVER_VERSION: 8.0.18
+ SPACE_VERSION: 1
+    ENCRYPTION: N
+         STATE: active
+*************************** 2. row ***************************
+         SPACE: 4294967278
+          NAME: innodb_undo_002
+          FLAG: 0
+    ROW_FORMAT: Undo
+     PAGE_SIZE: 16384
+ ZIP_PAGE_SIZE: 0
+    SPACE_TYPE: Undo
+ FS_BLOCK_SIZE: 0
+     FILE_SIZE: 0
+ALLOCATED_SIZE: 0
+SERVER_VERSION: 8.0.18
+ SPACE_VERSION: 1
+    ENCRYPTION: N
+         STATE: active
+2 rows in set (0.01 sec)
+
+
+
+新增undo log
+
+mysql> CREATE UNDO TABLESPACE testundo ADD DATAFILE 'testundo.ibu';
+Query OK, 0 rows affected (1.07 sec)
+
+mysql> SELECT * FROM  INFORMATION_SCHEMA.INNODB_TABLESPACES WHERE ROW_FORMAT = 'Undo' and NAME like '%testundo%' \G
+*************************** 1. row ***************************
+         SPACE: 4294966769
+          NAME: testundo
+          FLAG: 0
+    ROW_FORMAT: Undo
+     PAGE_SIZE: 16384
+ ZIP_PAGE_SIZE: 0
+    SPACE_TYPE: Undo
+ FS_BLOCK_SIZE: 0
+     FILE_SIZE: 0
+ALLOCATED_SIZE: 0
+SERVER_VERSION: 8.0.18
+ SPACE_VERSION: 1
+    ENCRYPTION: N
+         STATE: active
+1 row in set (0.01 sec)
+image.png
+
+删除undo log(先要更改undo log STATE = empty)
+
+mysql> ALTER UNDO TABLESPACE testundo SET INACTIVE;
+Query OK, 0 rows affected (0.07 sec)
+
+mysql> DROP UNDO TABLESPACE testundo;
+Query OK, 0 rows affected (0.13 sec)
+
+关于truncate undo log的种种
+
+Innodb_undo_truncate参数默认打开，这意味着默认情况下，undo tablespace超过1GB（参数innodb_max_undo_log_size来控制）时，就会触发online truncate．
+
+innodb_undo_log_truncate关闭时，只有undo log被置为INACTIVE（STATE = empty），才会触发自动truncate; 如果你想自己控制undo truncation, 可以关闭参数，在监控undo tablespace的大小，通过SET INACTIVE触发truncation, 再通过SET ACTIVE激活undo space。
+(注：当undo space状态为active时，需要确保至少两个active的undo space才允许操作SET INACTIVE，否则返回错误)
+
+释放undolog的size
+ALTER UNDO TABLESPACE tablespace_name SET INACTIVE；
+先设置为INACTIVE
+
+查看undo情况
+SELECT * FROM  INFORMATION_SCHEMA.INNODB_TABLESPACES WHERE ROW_FORMAT = 'undo';
+
+设置为可用
+ALTER UNDO TABLESPACE tablespace_name SET ACTIVE；
+```
+
